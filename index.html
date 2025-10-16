@@ -209,7 +209,8 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 /* === QR PNG عالي الدقة بقياس مضبوط 2.56 cm في Word === */
 function makeQR_PNG_Fixed() {
-  const link = buildLink();
+  const link = buildLink(); // ← هذا سيولّد الرابط الصحيح تلقائياً حسب النطاق
+
   if (!link) return alert("⚠️ لا يوجد بيانات كافية");
 
   const qr = qrcode(0, 'H');
@@ -362,9 +363,14 @@ async function copyAll(){
 
 /* === بناء الرابط ومشاركته === */
 function buildLink(){
-  const d=collect();
-  if(!d.email||!d.password)return null;
-  return location.origin+location.pathname+"?"+new URLSearchParams(d);
+  const d = collect();
+  if(!d.email || !d.password) return null;
+
+  // نحدد صفحة العرض حسب النطاق الحالي
+  let page = "view-icloud.html";
+  if (d.email.includes("@gmail.com")) page = "view-gmail.html";
+
+  return location.origin + location.pathname.replace(/[^/]+$/, '') + page + "?" + new URLSearchParams(d);
 }
 
 async function copyShare(){
@@ -404,6 +410,7 @@ function prefillFromURL(){
 </script>
 </body>
 </html>
+
 
 
 
