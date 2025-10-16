@@ -99,7 +99,8 @@
         <button class="btn btn-soft" onclick="genNames()">Generate Names</button>
         <button class="btn btn-soft" onclick="genDOB()">Generate DOB</button>
         <button class="btn btn-primary" onclick="makeQR()">Create QR</button>
-        
+        <button class="btn btn-primary" onclick="saveQR_PNG()">💾 Save PNG QR</button>
+
         <div class="row" style="justify-content:center; gap:8px; background:transparent; border:none; margin-top:4px;">
           <label style="font-weight:600;">النطاق:</label>
           <select id="emailDomain" style="padding:8px 10px; border-radius:8px; border:1px solid #ccc; font-size:15px;">
@@ -117,7 +118,7 @@
 
 <script>
 const $=id=>document.getElementById(id);
-const baseURL="https://saifali199.github.io/ID-Cards-test/";
+const baseURL="https://saifali199.github.io/ID-Cards/";
 let currentDomain="@icloud.com";
 
 document.addEventListener("DOMContentLoaded",()=>{
@@ -163,6 +164,15 @@ function genPassword(len=10){
   $("password").value=(upperChar+numChars+symbolChar+lowerChars).split('').sort(()=>Math.random()-0.5).join('');
 }
 
+function collect(){return{
+  email:$("email").value.trim(),
+  password:$("password").value.trim(),
+  fname:$("fname").value.trim(),
+  lname:$("lname").value.trim(),
+  dob:$("dob").value.trim(),
+  phone:$("phone").value.trim()
+};}
+
 function buildLink(){
   const d=collect();
   if(!d.email||!d.password)return null;
@@ -170,6 +180,7 @@ function buildLink(){
   return `${baseURL}${page}?${new URLSearchParams(d)}`;
 }
 
+/* === عرض QR في الصفحة فقط === */
 function makeQR(){
   const link=buildLink();
   if(!link)return alert("⚠️ لا يوجد بيانات كافية");
@@ -179,21 +190,53 @@ function makeQR(){
   $("qrcode").innerHTML=qr.createImgTag(6,6);
 }
 
+/* === حفظ QR كصورة PNG بدقة 2.56cm === */
+function saveQR_PNG(){
+  const link=buildLink();
+  if(!link)return alert("⚠️ لا يوجد بيانات كافية");
+  const qr=qrcode(0,'H');
+  qr.addData(link);
+  qr.make();
+
+  const qrSizeCm=2.56;
+  const wordDpi=96;
+  const pxPerCm=wordDpi/2.54;
+  const sizePx=Math.round(qrSizeCm*pxPerCm);
+  const scale=4;
+
+  const canvas=document.createElement("canvas");
+  canvas.width=sizePx*scale;
+  canvas.height=sizePx*scale;
+  const ctx=canvas.getContext("2d");
+  ctx.fillStyle="#ffffff";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#000000";
+
+  const cellCount=qr.getModuleCount();
+  const cellSize=canvas.width/cellCount;
+  for(let r=0;r<cellCount;r++){
+    for(let c=0;c<cellCount;c++){
+      if(qr.isDark(r,c)) ctx.fillRect(c*cellSize,r*cellSize,cellSize,cellSize);
+    }
+  }
+
+  const finalCanvas=document.createElement("canvas");
+  finalCanvas.width=sizePx;
+  finalCanvas.height=sizePx;
+  finalCanvas.getContext("2d").drawImage(canvas,0,0,sizePx,sizePx);
+
+  const a=document.createElement("a");
+  a.href=finalCanvas.toDataURL("image/png",1.0);
+  a.download="qr-code.png";
+  a.click();
+}
+
 async function copyShare(){
   const link=buildLink();
   if(!link)return alert("⚠️ الرجاء إدخال البريد وكلمة المرور أولاً");
   await navigator.clipboard.writeText(link);
   alert("✅ تم نسخ رابط المشاركة:\n"+link);
 }
-
-function collect(){return{
-  email:$("email").value.trim(),
-  password:$("password").value.trim(),
-  fname:$("fname").value.trim(),
-  lname:$("lname").value.trim(),
-  dob:$("dob").value.trim(),
-  phone:$("phone").value.trim()
-};}
 
 async function copyField(id){
   const v=$(id).value||"";
@@ -214,4 +257,3 @@ function openTutorial(){window.open("https://youtu.be/A4BeboClvyc","_blank");}
 </script>
 </body>
 </html>
-
