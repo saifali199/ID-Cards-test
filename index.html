@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Apple ID – بطاقة معلومات</title>
+  <title>Apple ID – بطاقة معلومات (المالك)</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
@@ -28,18 +28,16 @@
       background:#f2f3f6;
       height:100%;
     }
-
     .backdrop{
-      position: relative;
-      min-height: 100vh;
-      background: var(--overlay);
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 24px;
-      overflow-y: auto;
+      position:relative;
+      min-height:100vh;
+      background:var(--overlay);
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:24px;
+      overflow-y:auto;
     }
-
     .card{
       width:min(720px,96vw);
       background:var(--card-bg);
@@ -64,8 +62,6 @@
     .btn-soft{background:var(--ghost);color:var(--text)}
     .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     @media (max-width:580px){.two{grid-template-columns:1fr}}
-    .page{display:none}.page.active{display:block}
-    .hint{color:var(--muted);font-size:12px;text-align:center;margin:0 18px 14px}
     .qrbox{display:grid;place-items:center;padding:16px}
   </style>
 </head>
@@ -73,249 +69,87 @@
   <div class="backdrop">
     <div class="card" id="card-root">
       <div class="header">
-        <div class="title" id="modalTitle">الشروط والأحكام</div>
+        <div class="title">صفحة المالك – Apple ID / Gmail</div>
       </div>
 
-      <!-- صفحة الشروط -->
-      <div id="page-terms" class="page active">
-        <div class="content">
-          <div class="section-title">الشروط والأحكام</div>
-          <p class="note">الموافقة مطلوبة للمتابعة.</p>
-          <div class="row" style="align-items:start; padding:14px">
-            <ul>
-              <li>الرجاء مشاهدة الفيديو التعليمي قبل كل شيء.</li>
-              <li>هذا الكارت هو محفظة لبيانات حسابك.</li>
-              <li>يتم انشاء الحساب عن طريق المستخدم وهو آمن تماماً ومضمون مدى الحياة.</li>
-              <li>أنت المسؤول عن أي استخدام غير قانوني أو مخالف للسياسات.</li>
-              <li>سيتم حفظ موافقتك محلياً على جهازك لتسهيل الاستخدام لاحقاً.</li>
-              <li>احرص على تفعيل ميزة العثور على iPhone.</li>
-              <li>استخدم رقم هاتفك لغرض تسهيل عملية فتح الحساب في حال وجود مشكلة مستقبلا.</li>
-              <li>تأكد من ان دولة الحساب هي العراق لضمان تفعيل كامل الخدمات.</li>
-              <li>ننصح بعدم تغيير معلومات البطاقة لغرض استخدام الكارت في حالة فقدان المعلومات.</li>
-            </ul>
-          </div>
+      <div class="content">
+        <div class="section-title">البريد الإلكتروني</div>
+        <div class="row"><button class="btn btn-primary copy-btn" data-target="email">نسخ</button><input id="email" type="email"></div>
+
+        <div class="section-title">كلمة المرور</div>
+        <div class="row"><button class="btn btn-primary copy-btn" data-target="password">نسخ</button><input id="password" type="text"></div>
+
+        <div class="two">
+          <div><div class="section-title">First Name</div><div class="row"><button class="btn btn-primary copy-btn" data-target="fname">نسخ</button><input id="fname" type="text"></div></div>
+          <div><div class="section-title">Last Name</div><div class="row"><button class="btn btn-primary copy-btn" data-target="lname">نسخ</button><input id="lname" type="text"></div></div>
         </div>
-        <div class="footer">
-          <button class="btn btn-ghost" id="declineBtn">إلغاء</button>
-          <button class="btn btn-primary" id="agreeBtn">موافق</button>
-          <button class="btn btn-primary" onclick="openTutorial()">🎓 مشاهدة الفيديو التعليمي</button>
-        </div>
+
+        <div class="section-title">Date of Birth</div>
+        <div class="row"><button class="btn btn-primary copy-btn" data-target="dob">نسخ</button><input id="dob" type="text"></div>
+
+        <div class="section-title">Phone Number</div>
+        <div class="row"><button class="btn btn-primary copy-btn" data-target="phone">نسخ</button><input id="phone" type="text"></div>
+
+        <div class="qrbox"><div id="qrcode"></div></div>
       </div>
 
-      <!-- صفحة إدخال رقم الهاتف -->
-      <div id="page-phone" class="page">
-        <div class="content">
-          <div class="section-title">أدخل رقم هاتفك</div>
-          <div class="row">
-            <input id="userPhone" type="text" placeholder="أدخل رقم هاتفك فقط" autocomplete="off">
-          </div>
-          <p class="note">يمكنك كتابة أي رقم هاتف بدون مفتاح دولة.</p>
-        </div>
-        <div class="footer">
-          <button class="btn btn-ghost" onclick="showPage('page-terms')">رجوع</button>
-          <button class="btn btn-primary" onclick="goToForm()">متابعة</button>
-        </div>
-      </div>
-
-      <!-- صفحة المعلومات -->
-      <div id="page-form" class="page">
-        <div class="content">
-          <div class="section-title">البريد الإلكتروني</div>
-          <div class="row">
-            <button class="btn btn-primary copy-btn" data-target="email">نسخ</button>
-            <input id="email" type="email">
-          </div>
-
-          <div class="section-title">كلمة المرور</div>
-          <div class="row">
-            <button class="btn btn-primary copy-btn" data-target="password">نسخ</button>
-            <input id="password" type="text">
-          </div>
-
-          <div class="two">
-            <div>
-              <div class="section-title">First Name</div>
-              <div class="row">
-                <button class="btn btn-primary copy-btn" data-target="fname">نسخ</button>
-                <input id="fname" type="text">
-              </div>
-            </div>
-            <div>
-              <div class="section-title">Last Name</div>
-              <div class="row">
-                <button class="btn btn-primary copy-btn" data-target="lname">نسخ</button>
-                <input id="lname" type="text">
-              </div>
-            </div>
-          </div>
-
-          <div class="section-title">Date of Birth</div>
-          <div class="row">
-            <button class="btn btn-primary copy-btn" data-target="dob">نسخ</button>
-            <input id="dob" type="text">
-          </div>
-
-          <div class="section-title">Phone Number</div>
-          <div class="row">
-            <button class="btn btn-primary copy-btn" data-target="phone">نسخ</button>
-            <input id="phone" type="text">
-          </div>
-
-          <div class="qrbox"><div id="qrcode"></div></div>
+      <div class="footer">
+        <button class="btn btn-soft" onclick="genEmail()">Generate Email</button>
+        <button class="btn btn-soft" onclick="genPassword()">Generate Password</button>
+        <button class="btn btn-soft" onclick="genNames()">Generate Names</button>
+        <button class="btn btn-soft" onclick="genDOB()">Generate DOB</button>
+        <button class="btn btn-primary" onclick="makeQR()">Create QR</button>
+        
+        <div class="row" style="justify-content:center; gap:8px; background:transparent; border:none; margin-top:4px;">
+          <label style="font-weight:600;">النطاق:</label>
+          <select id="emailDomain" style="padding:8px 10px; border-radius:8px; border:1px solid #ccc; font-size:15px;">
+            <option value="@icloud.com">@icloud.com</option>
+            <option value="@gmail.com">@gmail.com</option>
+          </select>
         </div>
 
-        <!-- مالك -->
-        <div class="footer" id="footer-owner">
-          <button class="btn btn-soft" onclick="genIcloud()">Generate iCloud</button>
-          <button class="btn btn-soft" onclick="genPassword()">Generate Password</button>
-          <button class="btn btn-soft" onclick="genNames()">Generate Names</button>
-          <button class="btn btn-soft" onclick="genDOB()">Generate DOB</button>
-          <button class="btn btn-primary" onclick="makeQR_PNG_Fixed()">Create PNG QR</button>
-
-
-          
-          <button class="btn btn-ghost" onclick="copyAll()">Copy All</button>
-          <button class="btn btn-ghost" onclick="copyShare()">Share Link</button>
-          <button class="btn btn-primary" onclick="saveCardImage()">Save Card</button>
-          <button class="btn btn-primary" onclick="saveCSV()">Save CSV</button>
-          <button class="btn btn-primary" onclick="openTutorial()">🎓 مشاهدة الفيديو التعليمي</button>
-        </div>
-
-        <!-- عرض -->
-        <div class="footer" id="footer-view" style="display:none">
-          <button class="btn btn-ghost" onclick="copyAll()">Copy All</button>
-          <button class="btn btn-primary" onclick="saveCardImage()">Save Card</button>
-          <button class="btn btn-primary" onclick="openTutorial()">🎓 مشاهدة الفيديو التعليمي</button>
-        </div>
+        <button class="btn btn-ghost" onclick="copyShare()">Share Link</button>
+        <button class="btn btn-primary" onclick="saveCardImage()">Save Card</button>
+        <button class="btn btn-primary" onclick="openTutorial()">🎓 مشاهدة الفيديو التعليمي</button>
       </div>
     </div>
   </div>
 
 <script>
 const $=id=>document.getElementById(id);
+const baseURL="https://saifali199.github.io/ID-Cards/";
+let currentDomain="@icloud.com";
 
 document.addEventListener("DOMContentLoaded",()=>{
-  $("agreeBtn").addEventListener("click",()=>{
-    const q=new URLSearchParams(location.search);
-    if(q.toString()){ showPage("page-phone"); } else { showPage("page-form"); }
-  });
-  $("declineBtn").addEventListener("click",()=>alert("تم الإلغاء"));
-  document.querySelectorAll(".copy-btn").forEach(btn=>{
-    btn.addEventListener("click",()=>copyField(btn.dataset.target));
-  });
-  prefillFromURL();
-  toggleFooter();
+  $("emailDomain").value=localStorage.getItem("lastDomain")||"@icloud.com";
+  currentDomain=$("emailDomain").value;
+  $("emailDomain").addEventListener("change",()=>{currentDomain=$("emailDomain").value;localStorage.setItem("lastDomain",currentDomain);});
+  document.querySelectorAll(".copy-btn").forEach(btn=>btn.addEventListener("click",()=>copyField(btn.dataset.target)));
 });
 
-/* === QR PNG عالي الدقة بقياس مضبوط 2.56 cm في Word === */
-function makeQR_PNG_Fixed() {
-  const link = buildLink(); // ← هذا سيولّد الرابط الصحيح تلقائياً حسب النطاق
-
-  if (!link) return alert("⚠️ لا يوجد بيانات كافية");
-
-  const qr = qrcode(0, 'H');
-  qr.addData(link);
-  qr.make();
-
-  const qrSizeCm = 2.56;   // الحجم النهائي المطلوب في Word
-  const wordDpi = 96;       // DPI الذي يستخدمه Word فعليًا
-  const pxPerCm = wordDpi / 2.54;
-  const sizePx = Math.round(qrSizeCm * pxPerCm);
-
-  // ✳️ نرسم داخليًا ×4 لزيادة الوضوح
-  const scaleFactor = 4;
-  const canvas = document.createElement("canvas");
-  canvas.width = sizePx * scaleFactor;
-  canvas.height = sizePx * scaleFactor;
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "#ffffff"; // خلفية بيضاء
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#000000";
-
-  const cellCount = qr.getModuleCount();
-  const cellSize = canvas.width / cellCount;
-
-  for (let r = 0; r < cellCount; r++) {
-    for (let c = 0; c < cellCount; c++) {
-      if (qr.isDark(r, c)) {
-        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-      }
-    }
-  }
-
-  // ✳️ نصغّر الناتج إلى الحجم الصحيح
-  const finalCanvas = document.createElement("canvas");
-  finalCanvas.width = sizePx;
-  finalCanvas.height = sizePx;
-  const fctx = finalCanvas.getContext("2d");
-  fctx.drawImage(canvas, 0, 0, sizePx, sizePx);
-
-  const dataURL = finalCanvas.toDataURL("image/png", 1.0);
-
-  // عرض بالحجم الحقيقي في الصفحة
-  const qrBox = $("qrcode");
-  qrBox.innerHTML = "";
-  const img = document.createElement("img");
-  img.src = dataURL;
-  img.style.width = `${qrSizeCm}cm`;
-  img.style.height = `${qrSizeCm}cm`;
-  img.style.display = "block";
-  img.style.margin = "auto";
-  img.style.border = "1px solid #ccc";
-  qrBox.appendChild(img);
-
-  // حفظ تلقائي
-  const a = document.createElement("a");
-  a.href = dataURL;
-  a.download = "apple-id-qr.png";
-  a.click();
+function genNames(){
+  const FIRST=["James","John","Robert","Michael","Emily","Emma","Olivia","Sophia","Isabella"];
+  const LAST=["Smith","Johnson","Williams","Brown","Jones","Garcia","Miller","Davis"];
+  $("fname").value=FIRST[Math.floor(Math.random()*FIRST.length)];
+  $("lname").value=LAST[Math.floor(Math.random()*LAST.length)];
 }
 
-
-
-
-
-
-
-
-function openTutorial() {
-  window.open("https://drive.google.com/file/d/1Uk845wPA623RnmBzTXGWy8plA1Jl1KbI/view?usp=sharing", "_blank");
+function genDOB(){
+  const months=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+  const y=1990+Math.floor(Math.random()*(2006-1990+1));
+  const m=Math.floor(Math.random()*12);
+  const d=1+Math.floor(Math.random()*28);
+  $("dob").value=`${String(d).padStart(2,"0")} ${months[m]} ${y}`;
 }
 
-function showPage(id){
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  $(id).classList.add("active");
-  $("modalTitle").textContent=
-    (id==="page-terms")?"الشروط والأحكام":
-    (id==="page-phone")?"إدخال رقم الهاتف":"محفظة حساب Apple ID";
-}
-
-function toggleFooter(){
-  const q=new URLSearchParams(location.search);
-  if(q.toString()){ $("footer-owner").style.display="none"; $("footer-view").style.display="flex"; }
-}
-
-function goToForm(){
-  let phone=$("userPhone").value.trim();
-  $("phone").value=phone;
-  showPage("page-form");
-}
-
-/* === أسماء وأدوات التوليد === */
-const FIRST=["James","John","Robert","Michael","Emily","Emma","Olivia","Sophia","Isabella"];
-const LAST=["Smith","Johnson","Williams","Brown","Jones","Garcia","Miller","Davis"];
-const pick=a=>a[Math.floor(Math.random()*a.length)];
-
-function genNames(){ $("fname").value=pick(FIRST); $("lname").value=pick(LAST); }
-
-function genIcloud(len=14){
+function genEmail(len=14){
   const lower="abcdefghijklmnopqrstuvwxyz",nums="0123456789";
   const numCount=3+Math.floor(Math.random()*2);
   const lowerCount=len-numCount;
   const numChars=Array.from({length:numCount},()=>nums[Math.floor(Math.random()*nums.length)]).join('');
   const lowerChars=Array.from({length:lowerCount},()=>lower[Math.floor(Math.random()*lower.length)]).join('');
-  $("email").value=(lowerChars+numChars).split('').sort(()=>Math.random()-0.5).join('')+"@icloud.com";
+  const username=(lowerChars+numChars).split('').sort(()=>Math.random()-0.5).join('');
+  $("email").value=username+currentDomain;
 }
 
 function genPassword(len=10){
@@ -329,21 +163,27 @@ function genPassword(len=10){
   $("password").value=(upperChar+numChars+symbolChar+lowerChars).split('').sort(()=>Math.random()-0.5).join('');
 }
 
-function genDOB(){
-  const months=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
-  const y=1990+Math.floor(Math.random()*(2006-1990+1));
-  const m=Math.floor(Math.random()*12);
-  const d=1+Math.floor(Math.random()*28);
-  $("dob").value=`${String(d).padStart(2,"0")} ${months[m]} ${y}`;
+function buildLink(){
+  const d=collect();
+  if(!d.email||!d.password)return null;
+  const page=(currentDomain==="@gmail.com")?"view-gmail.html":"view-icloud.html";
+  return `${baseURL}${page}?${new URLSearchParams(d)}`;
 }
 
-/* === نسخ الحقول === */
-async function copyField(id){
-  let v=$(id).value||"";
-  if(!v)return alert("الحقل فارغ");
-  if(id==="email" && v.endsWith("@icloud.com"))v=v.replace("@icloud.com","");
-  await navigator.clipboard.writeText(v);
-  alert("تم النسخ: "+v);
+function makeQR(){
+  const link=buildLink();
+  if(!link)return alert("⚠️ لا يوجد بيانات كافية");
+  const qr=qrcode(0,'H');
+  qr.addData(link);
+  qr.make();
+  $("qrcode").innerHTML=qr.createImgTag(6,6);
+}
+
+async function copyShare(){
+  const link=buildLink();
+  if(!link)return alert("⚠️ الرجاء إدخال البريد وكلمة المرور أولاً");
+  await navigator.clipboard.writeText(link);
+  alert("✅ تم نسخ رابط المشاركة:\n"+link);
 }
 
 function collect(){return{
@@ -355,62 +195,22 @@ function collect(){return{
   phone:$("phone").value.trim()
 };}
 
-async function copyAll(){
-  const d=collect();
-  await navigator.clipboard.writeText(`Email: ${d.email}\nPassword: ${d.password}\nFirst Name: ${d.fname}\nLast Name: ${d.lname}\nDOB: ${d.dob}\nPhone: ${d.phone}`);
-  alert("✅ تم نسخ جميع الحقول مع البيانات المدخلة");
+async function copyField(id){
+  const v=$(id).value||"";
+  if(!v)return alert("الحقل فارغ");
+  await navigator.clipboard.writeText(v);
+  alert("تم النسخ: "+v);
 }
 
-/* === بناء الرابط ومشاركته === */
-function buildLink(){
-  const d = collect();
-  if(!d.email || !d.password) return null;
-
-  // نحدد صفحة العرض حسب النطاق الحالي
-  let page = "view-icloud.html";
-  if (d.email.includes("@gmail.com")) page = "view-gmail.html";
-
-  return location.origin + location.pathname.replace(/[^/]+$/, '') + page + "?" + new URLSearchParams(d);
-}
-
-async function copyShare(){
-  const link=buildLink();
-  if(!link)return alert("⚠️ الرجاء إدخال البريد وكلمة المرور على الأقل");
-  await navigator.clipboard.writeText(link);
-  alert("✅ تم نسخ رابط المشاركة:\n"+link);
-}
-
-/* === الحفظ === */
 async function saveCardImage(){
   const canvas=await html2canvas($("card-root"),{scale:2});
   const a=document.createElement("a");
   a.href=canvas.toDataURL("image/png");
-  a.download="apple-id-card.png";
+  a.download="owner-card.png";
   a.click();
 }
 
-function saveCSV(){
-  const d=collect(),header=["Email","Password","First Name","Last Name","DOB","Phone"];
-  const saved=JSON.parse(localStorage.getItem("csvData")||"[]");
-  saved.push([d.email,d.password,d.fname,d.lname,d.dob,d.phone]);
-  localStorage.setItem("csvData",JSON.stringify(saved));
-  const csv=header.join(",")+"\n"+saved.map(r=>r.join(",")).join("\n");
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-  a.download="apple-id-info.csv";
-  a.click();
-}
-
-function prefillFromURL(){
-  const q=new URLSearchParams(location.search);
-  ["email","password","fname","lname","dob","phone"].forEach(k=>{
-    if(q.has(k))$(k).value=q.get(k);
-  });
-}
+function openTutorial(){window.open("https://youtu.be/A4BeboClvyc","_blank");}
 </script>
 </body>
 </html>
-
-
-
-
