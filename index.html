@@ -98,8 +98,9 @@
         <button class="btn btn-soft" onclick="genPassword()">Generate Password</button>
         <button class="btn btn-soft" onclick="genNames()">Generate Names</button>
         <button class="btn btn-soft" onclick="genDOB()">Generate DOB</button>
-        <button class="btn btn-primary" onclick="makeQR()">Create QR</button>
-        <button class="btn btn-primary" onclick="saveQR_PNG()">💾 Save PNG QR</button>
+        <button class="btn btn-primary" onclick="previewQR()">Create QR</button>
+        <button class="btn btn-primary" onclick="makeQR_PNG_Fixed()">💾 Save PNG QR</button>
+
 
         <div class="row" style="justify-content:center; gap:8px; background:transparent; border:none; margin-top:4px;">
           <label style="font-weight:600;">النطاق:</label>
@@ -180,56 +181,112 @@ function buildLink(){
   return `${baseURL}${page}?${new URLSearchParams(d)}`;
 }
 
-/* === عرض QR في الصفحة فقط === */
-function makeQR(){
-  const link=buildLink();
-  if(!link)return alert("⚠️ لا يوجد بيانات كافية");
-  const qr=qrcode(0,'H');
-  qr.addData(link);
-  qr.make();
-  $("qrcode").innerHTML=qr.createImgTag(6,6);
-}
+/* === حفظ PNG بقياس ثابت 2.55cm وبقاء المعاينة === */
+function makeQR_PNG_Fixed() {
+  const link = buildLink();
+  if (!link) { alert("⚠️ لا يوجد بيانات كافية"); return; }
 
-/* === حفظ QR كصورة PNG بدقة 2.56cm === */
-function saveQR_PNG(){
-  const link=buildLink();
-  if(!link)return alert("⚠️ لا يوجد بيانات كافية");
-  const qr=qrcode(0,'H');
+  const qr = qrcode(0, 'H');
   qr.addData(link);
   qr.make();
 
-  const qrSizeCm=2.48;
-  const wordDpi=96;
-  const pxPerCm=wordDpi/2.48;
-  const sizePx=Math.round(qrSizeCm*pxPerCm);
-  const scale=5;
+  const desiredCm   = 2.55;   // ← التعديل هنا
+  const effectiveDpi = 96;
+  const pxPerCm     = effectiveDpi / 2.54;
+  const sizePx      = Math.round(desiredCm * pxPerCm);
 
-  const canvas=document.createElement("canvas");
-  canvas.width=sizePx*scale;
-  canvas.height=sizePx*scale;
-  const ctx=canvas.getContext("2d");
-  ctx.fillStyle="#ffffff";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle="#000000";
+  const scaleFactor = 5;
+  const big = document.createElement("canvas");
+  big.width  = sizePx * scaleFactor;
+  big.height = sizePx * scaleFactor;
+  const bctx = big.getContext("2d");
 
-  const cellCount=qr.getModuleCount();
-  const cellSize=canvas.width/cellCount;
-  for(let r=0;r<cellCount;r++){
-    for(let c=0;c<cellCount;c++){
-      if(qr.isDark(r,c)) ctx.fillRect(c*cellSize,r*cellSize,cellSize,cellSize);
+  bctx.fillStyle = "#ffffff";
+  bctx.fillRect(0, 0, big.width, big.height);
+  bctx.fillStyle = "#000000";
+
+  const cellCount = qr.getModuleCount();
+  const cellSize  = big.width / cellCount;
+  for (let r = 0; r < cellCount; r++) {
+    for (let c = 0; c < cellCount; c++) {
+      if (qr.isDark(r, c)) {
+        bctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+      }
     }
   }
 
-  const finalCanvas=document.createElement("canvas");
-  finalCanvas.width=sizePx;
-  finalCanvas.height=sizePx;
-  finalCanvas.getContext("2d").drawImage(canvas,0,0,sizePx,sizePx);
+  const out = document.createElement("canvas");
+  out.width  = sizePx;
+  out.height = sizePx;
+  const octx = out.getContext("2d");
+  octx.drawImage(big, 0, 0, sizePx, sizePx);
 
-  const a=document.createElement("a");
-  a.href=finalCanvas.toDataURL("image/png",1.0);
-  a.download="qr-code.png";
+  const dataURL = out.toDataURL("image/png");
+
+  const qrBox = $("qrcode");
+  const img = new Image();
+  img.onload = () => {
+    qrBox.innerHTML = "";
+    img.style.width  = `${desiredCm}cm`;
+    img.style.height = `${desiredCm}cm`;
+    img.style.display = "block";
+    img.style.margin  = "auto";
+    qrBox.appendChild(img);
+  };
+  img.src = dataURL;
+
+  const a = document.createElement("a");
+  a.href = dataURL;
+  a.download = "apple-id-qr.png";
   a.click();
 }
+
+/* === معاينة فقط بقياس 2.55 سم === */
+function previewQR() {
+  const link = buildLink();
+  if (!link) { alert("⚠️ لا يوجد بيانات كافية"); return; }
+
+  const qr = qrcode(0, 'H');
+  qr.addData(link);
+  qr.make();
+
+  const desiredCm   = 2.51;   // ← التعديل هنا أيضاً
+  const effectiveDpi = 96;
+  const pxPerCm     = effectiveDpi / 2.54;
+  const sizePx      = Math.round(desiredCm * pxPerCm);
+
+  const canvas = document.createElement("canvas");
+  canvas.width  = sizePx;
+  canvas.height = sizePx;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, sizePx, sizePx);
+  ctx.fillStyle = "#000000";
+
+  const cellCount = qr.getModuleCount();
+  const cellSize  = sizePx / cellCount;
+  for (let r = 0; r < cellCount; r++) {
+    for (let c = 0; c < cellCount; c++) {
+      if (qr.isDark(r, c)) {
+        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+      }
+    }
+  }
+
+  const qrBox = $("qrcode");
+  qrBox.innerHTML = "";
+  const img = new Image();
+  img.src = canvas.toDataURL("image/png");
+  img.style.width  = `${desiredCm}cm`;
+  img.style.height = `${desiredCm}cm`;
+  img.style.display = "block";
+  img.style.margin  = "auto";
+  qrBox.appendChild(img);
+}
+
+
+
 
 async function copyShare(){
   const link=buildLink();
@@ -254,9 +311,51 @@ async function saveCardImage(){
 }
 
 function openTutorial(){window.open("https://youtu.be/A4BeboClvyc","_blank");}
+  /* === عرض QR فقط بدون حفظ === */
+function previewQR() {
+  const link = buildLink();
+  if (!link) return alert("⚠️ لا يوجد بيانات كافية");
+
+  const qr = qrcode(0, 'H');
+  qr.addData(link);
+  qr.make();
+
+  const qrSizeCm = 2.56;
+  const wordDpi = 300;
+  const pxPerCm = wordDpi / 2.54;
+  const sizePx = Math.round(qrSizeCm * pxPerCm);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = sizePx;
+  canvas.height = sizePx;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, sizePx, sizePx);
+  ctx.fillStyle = "#000";
+
+  const cellCount = qr.getModuleCount();
+  const cellSize = sizePx / cellCount;
+  for (let r = 0; r < cellCount; r++) {
+    for (let c = 0; c < cellCount; c++) {
+      if (qr.isDark(r, c)) ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+    }
+  }
+
+  const qrBox = $("qrcode");
+  qrBox.innerHTML = "";
+  const img = document.createElement("img");
+  img.src = canvas.toDataURL("image/png", 1.0);
+  img.style.width = `${qrSizeCm}cm`;
+  img.style.height = `${qrSizeCm}cm`;
+  img.style.display = "block";
+  img.style.margin = "auto";
+  qrBox.appendChild(img);
+}
+
 </script>
 </body>
 </html>
+
 
 
 
