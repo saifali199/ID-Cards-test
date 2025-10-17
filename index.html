@@ -198,11 +198,11 @@ function saveQR_PNG(){
   qr.addData(link);
   qr.make();
 
-  const qrSizeCm=2.56;
+  const qrSizeCm=2.45;
   const wordDpi=96;
   const pxPerCm=wordDpi/2.54;
   const sizePx=Math.round(qrSizeCm*pxPerCm);
-  const scale=4;
+  const scale=5;
 
   const canvas=document.createElement("canvas");
   canvas.width=sizePx*scale;
@@ -257,4 +257,5 @@ function openTutorial(){window.open("https://youtu.be/A4BeboClvyc","_blank");}
 </script>
 </body>
 </html>
+
 
