@@ -190,12 +190,12 @@ function makeQR_PNG_Fixed() {
   qr.addData(link);
   qr.make();
 
-  const desiredCm   = 2.55;   // ← التعديل هنا
+  const desiredCm   = 2.81;   // ← التعديل هنا
   const effectiveDpi = 96;
   const pxPerCm     = effectiveDpi / 2.54;
   const sizePx      = Math.round(desiredCm * pxPerCm);
 
-  const scaleFactor = 5;
+  const scaleFactor = 8;
   const big = document.createElement("canvas");
   big.width  = sizePx * scaleFactor;
   big.height = sizePx * scaleFactor;
@@ -355,6 +355,7 @@ function previewQR() {
 </script>
 </body>
 </html>
+
 
 
 
