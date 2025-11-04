@@ -157,7 +157,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   document.querySelectorAll(".copy-btn").forEach(btn=>btn.addEventListener("click",()=>copyField(btn.dataset.target)));
   prefillFromURL();
 });
-function openTutorial(){window.open("https://youtu.be/A4BeboClvyc","_blank");}
+function openTutorial(){window.open("https://drive.google.com/file/d/1c6aytgMKDLwQHmRkxaSRyvk0Ry9ZSOV9/view?usp=sharing");}
 function showPage(id){document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));$(id).classList.add("active");}
 function goToForm(){$("phone").value=$("userPhone").value.trim();showPage("page-form");}
 function prefillFromURL(){const q=new URLSearchParams(location.search);["email","password","fname","lname","dob","phone"].forEach(k=>{if(q.has(k))$(k).value=q.get(k);});}
@@ -168,3 +168,4 @@ async function saveCardImage(){const canvas=await html2canvas($("card-root"),{sc
 </script>
 </body>
 </html>
+
