@@ -116,8 +116,8 @@
         <button class="btn btn-ghost" onclick="copyShare()">Share Link</button>
         <button class="btn btn-primary" onclick="saveCardImage()">Save Card</button>
         <button class="btn btn-primary" onclick="openTutorial()">🎓 مشاهدة الفيديو التعليمي</button>
-        <!-- NEW: زر حفظ Excel -->
-        <button class="btn btn-primary" onclick="saveExcel()">📄 Save Excel (XLSX)</button>
+        <button type="button" onclick="addToExcel()">إضافة لهذه البطاقة</button>
+        <button type="button" onclick="downloadExcel()">تحميل ملف Excel</button>
       </div>
     </div>
   </div>
@@ -202,7 +202,7 @@ function makeQR_PNG_Fixed() {
   const sizePx      = Math.round(desiredCm * pxPerCm);
 
   const scaleFactor = 8;
-  const big = document.createElement("canvas");
+  const big = document.createElement("as");
   big.width  = sizePx * scaleFactor;
   big.height = sizePx * scaleFactor;
   const bctx = big.getContext("2d");
@@ -221,7 +221,7 @@ function makeQR_PNG_Fixed() {
     }
   }
 
-  const out = document.createElement("canvas");
+  const out = document.createElement("as");
   out.width  = sizePx;
   out.height = sizePx;
   const octx = out.getContext("2d");
@@ -460,10 +460,68 @@ function previewQR() {
   img.style.margin = "auto";
   qrBox.appendChild(img);
 }
+<canvas id="qrcode-canvas"></canvas>
+<script>
+  // إنشاء ملف Excel واحد
+  let excelWorkbook = new ExcelJS.Workbook();
+  let excelSheet = excelWorkbook.addWorksheet("Cards");
+
+  // العناوين
+  excelSheet.columns = [
+    { header: "Email", key: "email", width: 35 },
+    { header: "Password", key: "password", width: 20 },
+    { header: "DOB", key: "dob", width: 15 },
+    { header: "QR", key: "qr", width: 15 }
+  ];
+
+  // لتحديد ارتفاع الصفوف (مهم للصور)
+  excelSheet.properties.defaultRowHeight = 120;
+
+  // ---------------------------
+  // دالة إضافة البيانات + QR
+  // ---------------------------
+  async function addToExcel() {
+    const email = document.getElementById("email")?.value || "";
+    const password = document.getElementById("password")?.value || "";
+    const birthDate = document.getElementById("birthDate")?.value || "";
+
+    // الحصول على QR كسورة base64 من الـ canvas
+    const qrCanvas = document.getElementById("qrcode-canvas");
+    const qrBase64 = qrCanvas.toDataURL("image/png");
+
+    // إضافة الصف
+    const row = excelSheet.addRow([email, password, birthDate, ""]);
+
+    const rowNumber = row.number - 1; // لأن الصور تبدأ من 0
+
+    // إضافة الصورة
+    const imageId = excelWorkbook.addImage({
+      base64: qrBase64,
+      extension: 'png',
+    });
+
+    // موقع الصورة داخل عمود QR (العمود الرابع)
+    excelSheet.addImage(imageId, {
+      tl: { col: 3, row: rowNumber },
+      ext: { width: 110, height: 110 }
+    });
+
+    alert("تمت إضافة الصف مع صورة QR داخل ملف Excel بنجاح ✅");
+  }
+
+  // ---------------------------
+  // تحميل ملف الإكسل
+  // ---------------------------
+  async function downloadExcel() {
+    const buffer = await excelWorkbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), "OwnerCards.xlsx");
+  }
+</script>
 
 </script>
 </body>
 </html>
+
 
 
 
