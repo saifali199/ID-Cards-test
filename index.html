@@ -127,6 +127,8 @@
         <button class="btn btn-soft" onclick="genDOB()">Generate DOB</button>
         <button class="btn btn-primary" onclick="previewQR()">Create QR</button>
         <button class="btn btn-primary" onclick="makeQR_PNG_Fixed()">💾 Save PNG QR</button>
+        <button class="btn btn-primary" onclick="chooseQRFolder()">📁 اختيار مجلد QR</button>
+
 
         <div class="row" style="justify-content:center; gap:8px; background:transparent; border:none; margin-top:4px;">
           <label style="font-weight:600;">النطاق:</label>
@@ -148,6 +150,9 @@
   </div>
 
 <script>
+  let qrDirectoryHandle = null;
+let qrFileCounter = 1;
+
 const $=id=>document.getElementById(id);
 const baseURL = "https://www.idcardhub.com/"; // ✳️ دومينك الرسمي هنا
 let currentDomain="@icloud.com";
@@ -155,6 +160,7 @@ let currentDomain="@icloud.com";
 // ==== إعداد ExcelJS (ملف واحد في الذاكرة) ====
 let excelWorkbook = new ExcelJS.Workbook();
 let excelSheet = excelWorkbook.addWorksheet("Accounts");
+  
 
 excelSheet.columns = [
   { header: "Email",    key: "email",    width: 35 },
@@ -175,6 +181,16 @@ document.addEventListener("DOMContentLoaded",()=>{
     btn.addEventListener("click",()=>copyField(btn.dataset.target))
   );
 });
+  async function chooseQRFolder() {
+  try {
+    qrDirectoryHandle = await window.showDirectoryPicker();
+    alert("✅ تم اختيار مجلد لحفظ صور QR بنجاح!");
+  } catch (err) {
+    console.error(err);
+    alert("❌ لم يتم اختيار المجلد.");
+  }
+}
+
 
 function genNames(){
   const FIRST=["James","John","Robert","Michael","Emily","Emma","Olivia","Sophia","Isabella"];
@@ -332,8 +348,7 @@ function previewQR() {
   qrBox.appendChild(img);
 }
 
-/* ============ إضافة صف إلى ملف Excel (Email + Password + DOB + QR صورة) ============ */
-async function addToExcel(){
+async function addToExcel() {
   const d = collect();
 
   if (!d.email || !d.password) {
@@ -347,27 +362,34 @@ async function addToExcel(){
     return;
   }
 
-  // إضافة صف نصي (Email, Password, DOB, فراغ للـ QR)
-  const row = excelSheet.addRow([d.email, d.password, d.dob, ""]);
-  const excelRowIndex = row.number; // رقم الصف في الإكسل (1,2,3,...)
+  // تحقق أنه تم اختيار مجلد الحفظ
+  if (!qrDirectoryHandle) {
+    alert("⚠️ الرجاء اختيار مجلد لحفظ صور QR أولاً");
+    return;
+  }
 
-  // توليد QR لهذا الحساب في Canvas مخفي
+  // إضافة صف نصي (Email, Password, DOB, QR_FileName)
+  const row = excelSheet.addRow([d.email, d.password, d.dob, ""]);
+  const excelRowIndex = row.number;
+
+  // توليد QR في Canvas
   const qr = qrcode(0, 'H');
   qr.addData(link);
   qr.make();
 
   const sizePx = 220;
   const canvas = document.createElement("canvas");
-  canvas.width  = sizePx;
+  canvas.width = sizePx;
   canvas.height = sizePx;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, sizePx, sizePx);
-  ctx.fillStyle = "#000000";
+  ctx.fillStyle = "#000";
 
   const cellCount = qr.getModuleCount();
-  const cellSize  = sizePx / cellCount;
+  const cellSize = sizePx / cellCount;
+
   for (let r = 0; r < cellCount; r++) {
     for (let c = 0; c < cellCount; c++) {
       if (qr.isDark(r, c)) {
@@ -376,23 +398,28 @@ async function addToExcel(){
     }
   }
 
-  const dataURL   = canvas.toDataURL("image/png");
-  const base64Img = dataURL.split(",")[1];
+  const dataURL = canvas.toDataURL("image/png");
+  const base64Data = dataURL.split(",")[1];
+  const binary = atob(base64Data);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
 
-  const imageId = excelWorkbook.addImage({
-    base64: base64Img,
-    extension: 'png'
-  });
+  // إنشاء اسم للملف
+  const fileName = `qr_${String(qrFileCounter).padStart(4, "0")}.png`;
+  qrFileCounter++;
 
-  // وضع صورة QR في العمود الرابع للصف الحالي
-  excelSheet.addImage(imageId, {
-    tl:  { col: 3, row: excelRowIndex - 1 }, // col:3 => العمود الرابع (0-based)
-    ext: { width: 90, height: 90 }
-  });
+  // حفظ الصورة داخل المجلد الذي اخترته
+  const fileHandle = await qrDirectoryHandle.getFileHandle(fileName, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(bytes);
+  await writable.close();
 
-  excelSheet.getRow(excelRowIndex).height = 70;
+  // كتابة اسم ملف QR داخل العمود الرابع في الإكسل (QR_FileName)
+  excelSheet.getCell(`D${excelRowIndex}`).value = fileName;
 
-  alert("✅ تم إضافة هذه البطاقة إلى ملف Excel في الذاكرة (مع صورة QR)");
+  alert("✅ تم حفظ QR في المجلد وإضافة السطر للإكسل بنجاح!");
 }
 
 /* ============ تحميل ملف Excel النهائي ============ */
@@ -442,3 +469,4 @@ function openTutorial(){
 </script>
 </body>
 </html>
+
