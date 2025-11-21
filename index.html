@@ -6,7 +6,7 @@
   <title>Apple ID – بطاقة معلومات (المالك)</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <!-- NEW: ExcelJS + FileSaver (للإكسل مع الصور) -->
+  <!-- ExcelJS + FileSaver للإكسل مع الصور -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
   <style>
@@ -77,21 +77,45 @@
 
       <div class="content">
         <div class="section-title">البريد الإلكتروني</div>
-        <div class="row"><button class="btn btn-primary copy-btn" data-target="email">نسخ</button><input id="email" type="email"></div>
+        <div class="row">
+          <button class="btn btn-primary copy-btn" data-target="email">نسخ</button>
+          <input id="email" type="email">
+        </div>
 
         <div class="section-title">كلمة المرور</div>
-        <div class="row"><button class="btn btn-primary copy-btn" data-target="password">نسخ</button><input id="password" type="text"></div>
+        <div class="row">
+          <button class="btn btn-primary copy-btn" data-target="password">نسخ</button>
+          <input id="password" type="text">
+        </div>
 
         <div class="two">
-          <div><div class="section-title">First Name</div><div class="row"><button class="btn btn-primary copy-btn" data-target="fname">نسخ</button><input id="fname" type="text"></div></div>
-          <div><div class="section-title">Last Name</div><div class="row"><button class="btn btn-primary copy-btn" data-target="lname">نسخ</button><input id="lname" type="text"></div></div>
+          <div>
+            <div class="section-title">First Name</div>
+            <div class="row">
+              <button class="btn btn-primary copy-btn" data-target="fname">نسخ</button>
+              <input id="fname" type="text">
+            </div>
+          </div>
+          <div>
+            <div class="section-title">Last Name</div>
+            <div class="row">
+              <button class="btn btn-primary copy-btn" data-target="lname">نسخ</button>
+              <input id="lname" type="text">
+            </div>
+          </div>
         </div>
 
         <div class="section-title">Date of Birth</div>
-        <div class="row"><button class="btn btn-primary copy-btn" data-target="dob">نسخ</button><input id="dob" type="text"></div>
+        <div class="row">
+          <button class="btn btn-primary copy-btn" data-target="dob">نسخ</button>
+          <input id="dob" type="text">
+        </div>
 
         <div class="section-title">Phone Number</div>
-        <div class="row"><button class="btn btn-primary copy-btn" data-target="phone">نسخ</button><input id="phone" type="text"></div>
+        <div class="row">
+          <button class="btn btn-primary copy-btn" data-target="phone">نسخ</button>
+          <input id="phone" type="text">
+        </div>
 
         <div class="qrbox"><div id="qrcode"></div></div>
       </div>
@@ -104,7 +128,6 @@
         <button class="btn btn-primary" onclick="previewQR()">Create QR</button>
         <button class="btn btn-primary" onclick="makeQR_PNG_Fixed()">💾 Save PNG QR</button>
 
-
         <div class="row" style="justify-content:center; gap:8px; background:transparent; border:none; margin-top:4px;">
           <label style="font-weight:600;">النطاق:</label>
           <select id="emailDomain" style="padding:8px 10px; border-radius:8px; border:1px solid #ccc; font-size:15px;">
@@ -116,8 +139,10 @@
         <button class="btn btn-ghost" onclick="copyShare()">Share Link</button>
         <button class="btn btn-primary" onclick="saveCardImage()">Save Card</button>
         <button class="btn btn-primary" onclick="openTutorial()">🎓 مشاهدة الفيديو التعليمي</button>
-        <button type="button" onclick="addToExcel()">إضافة لهذه البطاقة</button>
-        <button type="button" onclick="downloadExcel()">تحميل ملف Excel</button>
+
+        <!-- أزرار الإكسل الجديدة -->
+        <button class="btn btn-primary" onclick="addToExcel()">➕ إضافة للإكسل</button>
+        <button class="btn btn-primary" onclick="downloadExcel()">📄 تحميل ملف Excel</button>
       </div>
     </div>
   </div>
@@ -126,13 +151,29 @@
 const $=id=>document.getElementById(id);
 const baseURL = "https://www.idcardhub.com/"; // ✳️ دومينك الرسمي هنا
 let currentDomain="@icloud.com";
-let excelRows = JSON.parse(localStorage.getItem("excelRows") || "[]");
+
+// ==== إعداد ExcelJS (ملف واحد في الذاكرة) ====
+let excelWorkbook = new ExcelJS.Workbook();
+let excelSheet = excelWorkbook.addWorksheet("Accounts");
+
+excelSheet.columns = [
+  { header: "Email",    key: "email",    width: 35 },
+  { header: "Password", key: "password", width: 22 },
+  { header: "DOB",      key: "dob",      width: 18 },
+  { header: "QR",       key: "qr",       width: 18 }
+];
+excelSheet.properties.defaultRowHeight = 90; // ارتفاع الصف للـ QR
 
 document.addEventListener("DOMContentLoaded",()=>{
   $("emailDomain").value=localStorage.getItem("lastDomain")||"@icloud.com";
   currentDomain=$("emailDomain").value;
-  $("emailDomain").addEventListener("change",()=>{currentDomain=$("emailDomain").value;localStorage.setItem("lastDomain",currentDomain);});
-  document.querySelectorAll(".copy-btn").forEach(btn=>btn.addEventListener("click",()=>copyField(btn.dataset.target)));
+  $("emailDomain").addEventListener("change",()=>{
+    currentDomain=$("emailDomain").value;
+    localStorage.setItem("lastDomain",currentDomain);
+  });
+  document.querySelectorAll(".copy-btn").forEach(btn=>
+    btn.addEventListener("click",()=>copyField(btn.dataset.target))
+  );
 });
 
 function genNames(){
@@ -187,7 +228,7 @@ function buildLink(){
   return `${baseURL}${page}?${new URLSearchParams(d)}`;
 }
 
-/* === حفظ PNG بقياس ثابت 2.55cm وبقاء المعاينة === */
+/* === حفظ PNG بقياس ثابت 2.81cm وبقاء المعاينة === */
 function makeQR_PNG_Fixed() {
   const link = buildLink();
   if (!link) { alert("⚠️ لا يوجد بيانات كافية"); return; }
@@ -196,13 +237,13 @@ function makeQR_PNG_Fixed() {
   qr.addData(link);
   qr.make();
 
-  const desiredCm   = 2.81;   // ← التعديل هنا
+  const desiredCm   = 2.81;
   const effectiveDpi = 96;
   const pxPerCm     = effectiveDpi / 2.54;
   const sizePx      = Math.round(desiredCm * pxPerCm);
 
   const scaleFactor = 8;
-  const big = document.createElement("as");
+  const big = document.createElement("canvas");
   big.width  = sizePx * scaleFactor;
   big.height = sizePx * scaleFactor;
   const bctx = big.getContext("2d");
@@ -221,7 +262,7 @@ function makeQR_PNG_Fixed() {
     }
   }
 
-  const out = document.createElement("as");
+  const out = document.createElement("canvas");
   out.width  = sizePx;
   out.height = sizePx;
   const octx = out.getContext("2d");
@@ -247,7 +288,7 @@ function makeQR_PNG_Fixed() {
   a.click();
 }
 
-/* === معاينة فقط بقياس 2.55 سم === */
+/* === معاينة فقط بقياس ثابت === */
 function previewQR() {
   const link = buildLink();
   if (!link) { alert("⚠️ لا يوجد بيانات كافية"); return; }
@@ -256,9 +297,9 @@ function previewQR() {
   qr.addData(link);
   qr.make();
 
-  const desiredCm   = 2.51;   // ← التعديل هنا أيضاً
-  const effectiveDpi = 96;
-  const pxPerCm     = effectiveDpi / 2.54;
+  const desiredCm   = 2.56;
+  const wordDpi = 300;
+  const pxPerCm     = wordDpi / 2.54;
   const sizePx      = Math.round(desiredCm * pxPerCm);
 
   const canvas = document.createElement("canvas");
@@ -282,16 +323,17 @@ function previewQR() {
 
   const qrBox = $("qrcode");
   qrBox.innerHTML = "";
-  const img = new Image();
-  img.src = canvas.toDataURL("image/png");
+  const img = document.createElement("img");
+  img.src = canvas.toDataURL("image/png", 1.0);
   img.style.width  = `${desiredCm}cm`;
   img.style.height = `${desiredCm}cm`;
   img.style.display = "block";
-  img.style.margin  = "auto";
+  img.style.margin = "auto";
   qrBox.appendChild(img);
 }
-/* ============ حفظ Excel مع عدة حسابات + QR لكل حساب ============ */
-async function saveExcel(){
+
+/* ============ إضافة صف إلى ملف Excel (Email + Password + DOB + QR صورة) ============ */
+async function addToExcel(){
   const d = collect();
 
   if (!d.email || !d.password) {
@@ -299,103 +341,78 @@ async function saveExcel(){
     return;
   }
 
-  // بناء الرابط حسب النطاق
   const link = buildLink();
   if (!link) {
     alert("⚠️ لا يوجد بيانات كافية لبناء الرابط");
     return;
   }
 
-  // إضافة الحساب الحالي إلى المصفوفة المحفوظة
-  excelRows.push({
-    email: d.email,
-    password: d.password,
-    dob: d.dob,
-    phone: d.phone,
-    link: link
-  });
-  localStorage.setItem("excelRows", JSON.stringify(excelRows));
+  // إضافة صف نصي (Email, Password, DOB, فراغ للـ QR)
+  const row = excelSheet.addRow([d.email, d.password, d.dob, ""]);
+  const excelRowIndex = row.number; // رقم الصف في الإكسل (1,2,3,...)
 
-  // إنشاء ملف إكسل جديد يحتوي كل الحسابات
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Accounts");
+  // توليد QR لهذا الحساب في Canvas مخفي
+  const qr = qrcode(0, 'H');
+  qr.addData(link);
+  qr.make();
 
-  ws.columns = [
-    { header: "Email",    key: "email",   width: 30 },
-    { header: "Password", key: "password",width: 22 },
-    { header: "DOB",      key: "dob",     width: 18 },
-    { header: "Phone",    key: "phone",   width: 16 },
-    { header: "Link",     key: "link",    width: 40 }
-  ];
+  const sizePx = 220;
+  const canvas = document.createElement("canvas");
+  canvas.width  = sizePx;
+  canvas.height = sizePx;
+  const ctx = canvas.getContext("2d");
 
-  ws.getRow(1).font = { bold: true };
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, sizePx, sizePx);
+  ctx.fillStyle = "#000000";
 
-  for (let i = 0; i < excelRows.length; i++) {
-    const rowData  = excelRows[i];
-    const rowIndex = i + 2; // الصف الثاني فما فوق
-
-    // إضافة بيانات النص
-    ws.addRow({
-      email: rowData.email,
-      password: rowData.password,
-      dob: rowData.dob,
-      phone: rowData.phone,
-      link: rowData.link
-    });
-
-    // توليد QR لهذا الحساب
-    const qr = qrcode(0, 'H');
-    qr.addData(rowData.link);
-    qr.make();
-
-    const sizePx = 220;
-    const canvas = document.createElement("canvas");
-    canvas.width  = sizePx;
-    canvas.height = sizePx;
-    const ctx = canvas.getContext("2d");
-
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, sizePx, sizePx);
-    ctx.fillStyle = "#000000";
-
-    const cellCount = qr.getModuleCount();
-    const cellSize  = sizePx / cellCount;
-    for (let r = 0; r < cellCount; r++) {
-      for (let c = 0; c < cellCount; c++) {
-        if (qr.isDark(r, c)) {
-          ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-        }
+  const cellCount = qr.getModuleCount();
+  const cellSize  = sizePx / cellCount;
+  for (let r = 0; r < cellCount; r++) {
+    for (let c = 0; c < cellCount; c++) {
+      if (qr.isDark(r, c)) {
+        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
       }
     }
-
-    const dataURL   = canvas.toDataURL("image/png");
-    const base64Img = dataURL.split(",")[1];
-
-    const imageId = wb.addImage({
-      base64: base64Img,
-      extension: 'png'
-    });
-
-    // وضع صورة الـ QR في عمود F تقريباً مقابل الصف
-    ws.addImage(imageId, {
-      tl:  { col: 5, row: rowIndex - 1 }, // موضع أعلى يسار الصورة
-      ext: { width: 90, height: 90 }
-    });
-
-    ws.getRow(rowIndex).height = 70;
   }
 
-  const buffer = await wb.xlsx.writeBuffer();
-  saveAs(
-    new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    }),
-    "accounts-with-qr.xlsx"
-  );
+  const dataURL   = canvas.toDataURL("image/png");
+  const base64Img = dataURL.split(",")[1];
 
-  alert("✅ تم حفظ الملف مع جميع الحسابات (" + excelRows.length + ")");
+  const imageId = excelWorkbook.addImage({
+    base64: base64Img,
+    extension: 'png'
+  });
+
+  // وضع صورة QR في العمود الرابع للصف الحالي
+  excelSheet.addImage(imageId, {
+    tl:  { col: 3, row: excelRowIndex - 1 }, // col:3 => العمود الرابع (0-based)
+    ext: { width: 90, height: 90 }
+  });
+
+  excelSheet.getRow(excelRowIndex).height = 70;
+
+  alert("✅ تم إضافة هذه البطاقة إلى ملف Excel في الذاكرة (مع صورة QR)");
 }
 
+/* ============ تحميل ملف Excel النهائي ============ */
+async function downloadExcel(){
+  if (excelSheet.rowCount <= 1) {
+    alert("⚠️ لا توجد بيانات محفوظة بعد.");
+    return;
+  }
+
+  try{
+    const buffer = await excelWorkbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+    saveAs(blob, "accounts-with-qr.xlsx");
+  }catch(err){
+    console.error(err);
+    alert("حدث خطأ أثناء إنشاء ملف الإكسل.");
+  }
+}
 
 async function copyShare(){
   const link=buildLink();
@@ -419,115 +436,9 @@ async function saveCardImage(){
   a.click();
 }
 
-function openTutorial(){window.open("https://drive.google.com/file/d/1c6aytgMKDLwQHmRkxaSRyvk0Ry9ZSOV9/view?usp=sharing");}
-  /* === عرض QR فقط بدون حفظ === */
-function previewQR() {
-  const link = buildLink();
-  if (!link) return alert("⚠️ لا يوجد بيانات كافية");
-
-  const qr = qrcode(0, 'H');
-  qr.addData(link);
-  qr.make();
-
-  const qrSizeCm = 2.56;
-  const wordDpi = 300;
-  const pxPerCm = wordDpi / 2.54;
-  const sizePx = Math.round(qrSizeCm * pxPerCm);
-
-  const canvas = document.createElement("canvas");
-  canvas.width = sizePx;
-  canvas.height = sizePx;
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, sizePx, sizePx);
-  ctx.fillStyle = "#000";
-
-  const cellCount = qr.getModuleCount();
-  const cellSize = sizePx / cellCount;
-  for (let r = 0; r < cellCount; r++) {
-    for (let c = 0; c < cellCount; c++) {
-      if (qr.isDark(r, c)) ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-    }
-  }
-
-  const qrBox = $("qrcode");
-  qrBox.innerHTML = "";
-  const img = document.createElement("img");
-  img.src = canvas.toDataURL("image/png", 1.0);
-  img.style.width = `${qrSizeCm}cm`;
-  img.style.height = `${qrSizeCm}cm`;
-  img.style.display = "block";
-  img.style.margin = "auto";
-  qrBox.appendChild(img);
+function openTutorial(){
+  window.open("https://drive.google.com/file/d/1c6aytgMKDLwQHmRkxaSRyvk0Ry9ZSOV9/view?usp=sharing");
 }
-<canvas id="qrcode-canvas"></canvas>
-<script>
-  // إنشاء ملف Excel واحد
-  let excelWorkbook = new ExcelJS.Workbook();
-  let excelSheet = excelWorkbook.addWorksheet("Cards");
-
-  // العناوين
-  excelSheet.columns = [
-    { header: "Email", key: "email", width: 35 },
-    { header: "Password", key: "password", width: 20 },
-    { header: "DOB", key: "dob", width: 15 },
-    { header: "QR", key: "qr", width: 15 }
-  ];
-
-  // لتحديد ارتفاع الصفوف (مهم للصور)
-  excelSheet.properties.defaultRowHeight = 120;
-
-  // ---------------------------
-  // دالة إضافة البيانات + QR
-  // ---------------------------
-  async function addToExcel() {
-    const email = document.getElementById("email")?.value || "";
-    const password = document.getElementById("password")?.value || "";
-    const birthDate = document.getElementById("birthDate")?.value || "";
-
-    // الحصول على QR كسورة base64 من الـ canvas
-    const qrCanvas = document.getElementById("qrcode-canvas");
-    const qrBase64 = qrCanvas.toDataURL("image/png");
-
-    // إضافة الصف
-    const row = excelSheet.addRow([email, password, birthDate, ""]);
-
-    const rowNumber = row.number - 1; // لأن الصور تبدأ من 0
-
-    // إضافة الصورة
-    const imageId = excelWorkbook.addImage({
-      base64: qrBase64,
-      extension: 'png',
-    });
-
-    // موقع الصورة داخل عمود QR (العمود الرابع)
-    excelSheet.addImage(imageId, {
-      tl: { col: 3, row: rowNumber },
-      ext: { width: 110, height: 110 }
-    });
-
-    alert("تمت إضافة الصف مع صورة QR داخل ملف Excel بنجاح ✅");
-  }
-
-  // ---------------------------
-  // تحميل ملف الإكسل
-  // ---------------------------
-  async function downloadExcel() {
-    const buffer = await excelWorkbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), "OwnerCards.xlsx");
-  }
-</script>
-
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
