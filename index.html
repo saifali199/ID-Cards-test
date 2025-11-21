@@ -121,6 +121,9 @@
       </div>
 
       <div class="footer">
+        <span id="saveCounter" style="margin-inline-end:auto;font-weight:600;">
+  العدد: 0
+</span>
         <button class="btn btn-soft" onclick="genEmail()">Generate Email</button>
         <button class="btn btn-soft" onclick="genPassword()">Generate Password</button>
         <button class="btn btn-soft" onclick="genNames()">Generate Names</button>
@@ -143,6 +146,7 @@
         <button class="btn btn-primary" onclick="openTutorial()">🎓 مشاهدة الفيديو التعليمي</button>
 
         <!-- أزرار الإكسل الجديدة -->
+        <button class="btn btn-ghost" onclick="clearExcel()">🗑 مسح بيانات الإكسل</button>
         <button class="btn btn-primary" onclick="addToExcel()">➕ إضافة للإكسل</button>
         <button class="btn btn-primary" onclick="downloadExcel()">📄 تحميل ملف Excel</button>
       </div>
@@ -164,6 +168,13 @@ let excelSheet = excelWorkbook.addWorksheet("Accounts");
 const accountsPerRow   = 10;
 const colsPerAccount   = 4;
 let accountCounter     = 0;
+  let savedCount = 0;
+
+function updateSaveCounter(){
+  const el = $("saveCounter");
+  if (el) el.textContent = "الحسابات المحفوظة: " + savedCount;
+}
+
 
 // إنشاء صف العناوين (Email 1, Password 1, ... , QR 10)
 function initExcelHeaders() {
@@ -435,10 +446,30 @@ async function addToExcel() {
   excelSheet.getCell(rowIndex, startCol + 1).value = d.password;
   excelSheet.getCell(rowIndex, startCol + 2).value = d.dob;
   excelSheet.getCell(rowIndex, startCol + 3).value = saveFolderPath + fileName;
+  savedCount++;
+  updateSaveCounter();
 
   alert("✅ تم حفظ الحساب وتوزيعه في الإكسل وحفظ QR في المجلد بنجاح!");
 }
 
+function clearExcel(){
+  const ok = confirm("هل أنت متأكد من مسح جميع البيانات من ملف الإكسل؟\nلن يتم حذف صور الـ QR من المجلد.");
+  if (!ok) return;
+
+  // إعادة إنشاء ملف إكسل جديد
+  excelWorkbook = new ExcelJS.Workbook();
+  excelSheet    = excelWorkbook.addWorksheet("Accounts");
+
+  // إعادة العناوين
+  initExcelHeaders();
+
+  // تصفير العدادات
+  accountCounter = 0;
+  savedCount     = 0;
+  updateSaveCounter();
+
+  alert("🗑 تم مسح بيانات الإكسل في الذاكرة. يمكنك البدء من جديد.");
+}
 
 /* ============ تحميل ملف Excel النهائي ============ */
 async function downloadExcel(){
@@ -487,6 +518,7 @@ function openTutorial(){
 </script>
 </body>
 </html>
+
 
 
 
