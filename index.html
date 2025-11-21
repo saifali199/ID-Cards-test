@@ -157,18 +157,28 @@ const $=id=>document.getElementById(id);
 const baseURL = "https://www.idcardhub.com/"; // ✳️ دومينك الرسمي هنا
 let currentDomain="@icloud.com";
 
-// ==== إعداد ExcelJS (ملف واحد في الذاكرة) ====
 let excelWorkbook = new ExcelJS.Workbook();
 let excelSheet = excelWorkbook.addWorksheet("Accounts");
-  
 
-excelSheet.columns = [
-  { header: "Email",    key: "email",    width: 35 },
-  { header: "Password", key: "password", width: 22 },
-  { header: "DOB",      key: "dob",      width: 18 },
-  { header: "QR",       key: "qr",       width: 18 }
-];
-excelSheet.properties.defaultRowHeight = 90; // ارتفاع الصف للـ QR
+// إعداد التوزيع: 10 حسابات في كل صف، وكل حساب 4 أعمدة
+const accountsPerRow   = 10;
+const colsPerAccount   = 4;
+let accountCounter     = 0;
+
+// إنشاء صف العناوين (Email 1, Password 1, ... , QR 10)
+function initExcelHeaders() {
+  for (let i = 0; i < accountsPerRow; i++) {
+    const colBase = i * colsPerAccount + 1; // 1 = العمود A
+    const slot    = i + 1;
+
+    excelSheet.getCell(1, colBase    ).value = `Email ${slot}`;
+    excelSheet.getCell(1, colBase + 1).value = `Password ${slot}`;
+    excelSheet.getCell(1, colBase + 2).value = `DOB ${slot}`;
+    excelSheet.getCell(1, colBase + 3).value = `QR ${slot}`;
+  }
+}
+initExcelHeaders();
+
 
 document.addEventListener("DOMContentLoaded",()=>{
   $("emailDomain").value=localStorage.getItem("lastDomain")||"@icloud.com";
@@ -368,18 +378,14 @@ async function addToExcel() {
     return;
   }
 
-  // إضافة صف نصي (Email, Password, DOB, QR_FileName)
-  const row = excelSheet.addRow([d.email, d.password, d.dob, ""]);
-  const excelRowIndex = row.number;
-
-  // توليد QR في Canvas
+  // ===== 1) توليد صورة الـ QR في Canvas =====
   const qr = qrcode(0, 'H');
   qr.addData(link);
   qr.make();
 
   const sizePx = 220;
   const canvas = document.createElement("canvas");
-  canvas.width = sizePx;
+  canvas.width  = sizePx;
   canvas.height = sizePx;
   const ctx = canvas.getContext("2d");
 
@@ -388,7 +394,7 @@ async function addToExcel() {
   ctx.fillStyle = "#000";
 
   const cellCount = qr.getModuleCount();
-  const cellSize = sizePx / cellCount;
+  const cellSize  = sizePx / cellCount;
 
   for (let r = 0; r < cellCount; r++) {
     for (let c = 0; c < cellCount; c++) {
@@ -398,29 +404,39 @@ async function addToExcel() {
     }
   }
 
-  const dataURL = canvas.toDataURL("image/png");
+  const dataURL   = canvas.toDataURL("image/png");
   const base64Data = dataURL.split(",")[1];
-  const binary = atob(base64Data);
-  const bytes = new Uint8Array(binary.length);
+  const binary    = atob(base64Data);
+  const bytes     = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
 
-  // إنشاء اسم للملف
+  // ===== 2) حفظ ملف PNG داخل المجلد الذي اخترته =====
   const fileName = `qr_${String(qrFileCounter).padStart(4, "0")}.png`;
   qrFileCounter++;
 
-  // حفظ الصورة داخل المجلد الذي اخترته
   const fileHandle = await qrDirectoryHandle.getFileHandle(fileName, { create: true });
-  const writable = await fileHandle.createWritable();
+  const writable   = await fileHandle.createWritable();
   await writable.write(bytes);
   await writable.close();
 
-  // كتابة اسم ملف QR داخل العمود الرابع في الإكسل (QR_FileName)
-  excelSheet.getCell(`D${excelRowIndex}`).value = fileName;
+  // ===== 3) تحديد مكان هذا الحساب في الإكسل (أفقيًا) =====
+  accountCounter++;                         // رقم هذا الحساب
+  const idx        = accountCounter - 1;    
+  const rowIndex   = Math.floor(idx / accountsPerRow) + 2; // الصف 2 وما بعده للبيانات
+  const slotInRow  = idx % accountsPerRow;                
+  const startCol   = slotInRow * colsPerAccount + 1;       // بداية أعمدة الحساب
 
-  alert("✅ تم حفظ QR في المجلد وإضافة السطر للإكسل بنجاح!");
+  // تعبئة الأربع أعمدة لهذا الحساب
+  excelSheet.getCell(rowIndex, startCol    ).value = d.email;
+  excelSheet.getCell(rowIndex, startCol + 1).value = d.password;
+  excelSheet.getCell(rowIndex, startCol + 2).value = d.dob;
+  excelSheet.getCell(rowIndex, startCol + 3).value = fileName; // اسم ملف الـ QR
+
+  alert("✅ تم حفظ الحساب وتوزيعه في الإكسل وحفظ QR في المجلد بنجاح!");
 }
+
 
 /* ============ تحميل ملف Excel النهائي ============ */
 async function downloadExcel(){
@@ -469,4 +485,5 @@ function openTutorial(){
 </script>
 </body>
 </html>
+
 
