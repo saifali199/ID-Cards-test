@@ -161,11 +161,23 @@ function openTutorial(){window.open("https://drive.google.com/file/d/1c6aytgMKDL
 function showPage(id){document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));$(id).classList.add("active");}
 function goToForm(){$("phone").value=$("userPhone").value.trim();showPage("page-form");}
 function prefillFromURL(){const q=new URLSearchParams(location.search);["email","password","fname","lname","dob","phone"].forEach(k=>{if(q.has(k))$(k).value=q.get(k);});}
-async function copyField(id){const v=$(id).value;if(!v)return alert("الحقل فارغ");await navigator.clipboard.writeText(v);alert("تم النسخ: "+v);}
+async function copyField(id){
+  let v = $(id).value || "";
+  if (!v) return alert("الحقل فارغ");
+
+  // إذا كان الحقل هو الإيميل → انسخ فقط الجزء قبل @
+  if (id === "email" && v.includes("@")) {
+    v = v.split("@")[0];
+  }
+
+  await navigator.clipboard.writeText(v);
+  alert("تم النسخ: " + v);
+}
 async function copyAll(){const d=collect();await navigator.clipboard.writeText(`Email: ${d.email}\nPassword: ${d.password}\nFirst Name: ${d.fname}\nLast Name: ${d.lname}\nDOB: ${d.dob}\nPhone: ${d.phone}`);alert("✅ تم نسخ جميع الحقول");}
 function collect(){return{email:$("email").value,password:$("password").value,fname:$("fname").value,lname:$("lname").value,dob:$("dob").value,phone:$("phone").value};}
 async function saveCardImage(){const canvas=await html2canvas($("card-root"),{scale:2});const a=document.createElement("a");a.href=canvas.toDataURL("image/png");a.download="apple-id-card.png";a.click();}
 </script>
 </body>
 </html>
+
 
