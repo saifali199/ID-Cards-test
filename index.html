@@ -131,6 +131,11 @@
         <button class="btn btn-primary" onclick="previewQR()">Create QR</button>
         <button class="btn btn-primary" onclick="makeQR_PNG_Fixed()">💾 Save PNG QR</button>
         <button class="btn btn-primary" onclick="chooseQRFolder()">📁 اختيار مجلد QR</button>
+<div class="row" style="background:transparent;border:none;">
+  <input id="bulkCount" type="number" min="1" placeholder="عدد الحسابات (مثلاً 500)"
+    style="padding:10px;border-radius:10px;border:1px solid #ccc;font-size:16px;width:220px;">
+  <button class="btn btn-primary" onclick="bulkGenerate()">🚀 إنشاء دفعة</button>
+</div>
 
 
         <div class="row" style="justify-content:center; gap:8px; background:transparent; border:none; margin-top:4px;">
@@ -154,6 +159,44 @@
   </div>
 
 <script>
+
+async function bulkGenerate() {
+  const count = parseInt($("bulkCount").value);
+
+  if (!count || count < 1) {
+    alert("⚠️ أدخل رقم صحيح");
+    return;
+  }
+
+  if (!qrDirectoryHandle) {
+    alert("⚠️ اختر مجلد حفظ QR أولاً");
+    return;
+  }
+
+  const confirmRun = confirm(`هل أنت متأكد من إنشاء ${count} حساب؟`);
+  if (!confirmRun) return;
+
+  // تعطيل الزر أثناء التنفيذ
+  document.body.style.pointerEvents = "none";
+
+  for (let i = 0; i < count; i++) {
+    genNames();
+    genDOB();
+    genPassword();
+    genEmail();
+
+    // انتظر كل عملية حفظ (مهم جداً)
+    await addToExcel();
+
+    // تأخير بسيط لتجنب تجميد المتصفح
+    await new Promise(r => setTimeout(r, 25));
+  }
+
+  document.body.style.pointerEvents = "auto";
+  alert(`✅ تم إنشاء ${count} حساب بنجاح`);
+}
+
+  
   let qrDirectoryHandle = null;
 let qrFileCounter = 1;
 
@@ -518,6 +561,7 @@ function openTutorial(){
 </script>
 </body>
 </html>
+
 
 
 
