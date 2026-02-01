@@ -278,7 +278,7 @@ function genEmail(len=14){
   const numChars=Array.from({length:numCount},()=>nums[Math.floor(Math.random()*nums.length)]).join('');
   const lowerChars=Array.from({length:lowerCount},()=>lower[Math.floor(Math.random()*lower.length)]).join('');
   const username=(lowerChars+numChars).split('').sort(()=>Math.random()-0.5).join('');
-  $("email").value="a"+username+currentDomain;
+  $("email").value="s"+username+currentDomain;
 }
 
 function genPassword(len=10){
@@ -561,6 +561,7 @@ function openTutorial(){
 </script>
 </body>
 </html>
+
 
 
 
