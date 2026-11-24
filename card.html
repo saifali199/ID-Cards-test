@@ -110,7 +110,7 @@ function info(){
     ["تاريخ الميلاد", fmtDate(acc.d)],
     ...(acc.ph ? [["رقم الهاتف", acc.ph]] : []),
   ];
-  app.innerHTML = `${steps(3)}<h1>محفظة حساب Apple ID</h1><p class="sub">اضغط «نسخ» والصق بالخانة بالضبط</p>
+  app.innerHTML = `${steps(3)}<h1>محفظة حساب Apple ID</h1><p class="sub">اضغط «نسخ» والصق بالخانة بالضبط${/@icloud\.com$/i.test(acc.e) ? " (نسخ الإيميل ينسخ الجزء اللي قبل @ لأن الآيفون يكمل @icloud.com وحده)" : ""}</p>
   <div class="box">${rows.map(([k,v],i)=>`<div class="row"><div><div class="k">${esc(k)}</div><div class="v" dir="auto">${esc(v)}</div></div><button class="copy" data-i="${i}">نسخ</button></div>`).join("")}</div>
   <button class="primary" id="all">نسخ الكل</button>
   <button class="ghost" id="vid">رجوع للفيديو</button>
@@ -121,7 +121,9 @@ function info(){
     catch{ const t=document.createElement("textarea"); t.value=text; document.body.append(t); t.select(); document.execCommand("copy"); t.remove(); }
     btn.classList.add("done"); const o=btn.textContent; btn.textContent="تم ✓"; setTimeout(()=>{btn.classList.remove("done");btn.textContent=o},1500);
   };
-  app.querySelectorAll(".copy").forEach(b => b.onclick = () => copy(rows[b.dataset.i][1], b));
+  // آيكلاود: الآيفون يطلب بس الجزء اللي قبل @ ، فننسخ هذا الجزء بس
+  const copyVal = i => (i === 0 && /@icloud\.com$/i.test(acc.e)) ? acc.e.split("@")[0] : rows[i][1];
+  app.querySelectorAll(".copy").forEach(b => b.onclick = () => copy(copyVal(+b.dataset.i), b));
   $("#all").onclick = e => copy(rows.map(r=>`${r[0]}: ${r[1]}`).join("\n"), e.target);
   $("#vid").onclick = video;
 }
