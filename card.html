@@ -105,6 +105,13 @@
   .lbl{font-size:17px;font-weight:600;margin:0 0 10px;display:flex;align-items:center;gap:6px}
   .note{font-size:12px;line-height:1.35;color:var(--mute);margin:-2px 2px 0}
   .steps-mini{font-size:12px;color:var(--mute);text-align:center;margin:30px 0 0}
+  .phonebox{margin-top:26px;background:var(--soft);border-radius:18px;padding:18px 18px 14px}
+  .phonebox .lbl{margin-bottom:4px}
+  .phonebox .note{margin:0 0 12px;font-size:13px}
+  .prow{display:flex;gap:8px}
+  .prow input{flex:1;min-width:0;font:inherit;font-size:17px;padding:12px 14px;border:1px solid #86868b;border-radius:12px;background:#fff;text-align:left}
+  .prow input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,227,.15)}
+  .prow .pill{min-width:84px;height:auto;border-radius:12px}
 
   /* ===== أسفل الصفحة ===== */
   footer{background:var(--soft);color:var(--mute);font-size:12px;line-height:1.33}
@@ -135,6 +142,9 @@ const CONFIG = {
   shopName: "NEXEL",
   whatsapp: "9647716145089",          // بدون + وبدون مسافات
   videoUrl: "tutorial-nexel.mp4",               // رابط فيديو الشرح (ملف بنفس المجلد أو رابط يوتيوب)
+  // قاعدة بيانات أرقام الزبائن (المفتاح العام يسمح بالإضافة بس، مو بالقراءة)
+  supabaseUrl: "https://bhuhvccjrzhpxezvysfi.supabase.co",
+  supabaseKey: "sb_publishable_siWKJigOCLN9Gg3_GHd8-g_XEPeJXcC",
 };
 /* ============================================== */
 
@@ -267,12 +277,58 @@ function info(){
       <div style="height:14px"></div>
       <button class="pill wide" id="all">نسخ الكل</button>
       <div style="text-align:center;margin-top:6px"><button class="link" id="vid">رجوع للفيديو</button></div>
+      <div class="phonebox" id="pbox"></div>
       <p class="steps-mini">رقم الكارت ${esc(acc.s||"")}</p>
     </div>`);
+  phoneBox();
   app.querySelectorAll(".fld").forEach(b => b.onclick = () => copy(F[b.dataset.i], b));
   const all = `First name: ${acc.f}\nLast name: ${acc.l}\nDate of birth: ${+d} ${MONTHS_EN[+m-1]} ${y}\nEmail: ${acc.e}\nPassword: ${acc.p}` + (acc.ph ? `\nPhone: ${acc.ph}` : "");
   $("#all").onclick = () => copy(all, null, "تم نسخ كل المعلومات");
   $("#vid").onclick = video;
+}
+
+/* ===== ربط رقم الزبون بالكارت (اختياري) =====
+   يرسل: رقم الكارت + الرقم + توقيع قصير من إيميل الكارت (حتى المحل يتأكد أنه من كارت حقيقي).
+   قاعدة البيانات تسمح بالإضافة بس، ولا أحد يكدر يقرا الأرقام بدون رمز المحل. */
+function normPhone(s){
+  const d = String(s).replace(/[\s\-()]/g, "").replace(/[٠-٩]/g, c => "٠١٢٣٤٥٦٧٨٩".indexOf(c));
+  const m = d.match(/^(?:\+?964|00964|0)?(7\d{9})$/);
+  return m ? "+964" + m[1] : null;
+}
+async function cardChk(){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${acc.s}|${acc.e}`));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 12);
+}
+function phoneBox(){
+  const box = $("#pbox"); if(!box || !CONFIG.supabaseUrl) return;
+  const key = "phone_" + (acc.s || ""), saved = localStorage.getItem(key);
+  if(saved){
+    box.innerHTML = `<div class="lbl">رقمك مربوط بالكارت ✓</div>
+      <p class="note">إذا فقدت الحساب راسلنا من هذا الرقم: <b dir="ltr">${esc(saved)}</b></p>
+      <button class="link" id="pchg" style="font-size:15px;padding:6px 0">تغيير الرقم</button>`;
+    $("#pchg").onclick = () => { localStorage.removeItem(key); phoneBox(); };
+    return;
+  }
+  box.innerHTML = `<div class="lbl">اربط رقمك بالكارت</div>
+    <p class="note">حتى نكدر نساعدك ونرجعلك حسابك إذا فقدته. اختياري، ونستخدمه بس للمساعدة.</p>
+    <div class="prow"><input id="pin" type="tel" inputmode="tel" autocomplete="tel" placeholder="07XX XXX XXXX" dir="ltr">
+    <button class="pill" id="psave">حفظ</button></div><p class="note" id="pmsg"></p>`;
+  $("#psave").onclick = async () => {
+    const ph = normPhone($("#pin").value), msg = $("#pmsg");
+    if(!ph){ msg.textContent = "اكتب رقم موبايل عراقي صحيح، مثل 07701234567"; msg.style.color = "#d70015"; return; }
+    const btn = $("#psave"); btn.disabled = true; msg.style.color = ""; msg.textContent = "جاري الحفظ…";
+    try{
+      const r = await fetch(CONFIG.supabaseUrl + "/rest/v1/card_customer_phones", {
+        method: "POST", headers: { apikey: CONFIG.supabaseKey, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ serial: acc.s, chk: await cardChk(), phone: ph })
+      });
+      if(!r.ok) throw new Error(r.status);
+      localStorage.setItem(key, ph); phoneBox();
+    }catch(e){
+      btn.disabled = false; msg.style.color = "#d70015";
+      msg.textContent = "ما انحفظ الرقم. تأكد من الإنترنت وحاول مرة ثانية، أو راسلنا على واتساب.";
+    }
+  };
 }
 
 async function copy(text, el, msg){
